@@ -716,7 +716,7 @@ function rFixtures() {
   C.fixtures.forEach(m=>{ const r=m.round||'Round 1 – February/March'; if(!grouped[r]) grouped[r]=[]; grouped[r].push(m); });
   let html='';
   ROUND_ORDER.forEach(round=>{
-    const matches = grouped[round]; if(!matches||!matches.length) return;
+    const matches = grouped[round].filter(m => !(m.status === 'upcoming' && !m.match_date)); if(!matches||!matches.length) return;
     html += `<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:8px 0 6px;border-bottom:2px solid var(--gold);margin-bottom:4px">${round}</div>`;
     matches.sort((a,b)=>new Date(a.match_date+' '+(a.match_time||'00:00'))-new Date(b.match_date+' '+(b.match_time||'00:00')));
     html += matches.map(m=>{
