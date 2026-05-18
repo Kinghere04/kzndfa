@@ -443,7 +443,18 @@ footer .fsocial a:hover{color:var(--gold)}
       <div class="acard" id="fix-form">
         <div id="fix-form-lbl" style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px">Add New Fixture</div>
         <div class="frow">
-          <div class="ffield"><label>Date</label><input class="inp" id="f-date" type="date" style="margin-bottom:0"></div>
+          <div class="ffield"><label>Round</label><select class="inp" id="f-round" style="margin-bottom:0">
+            <option value="Round 1 – February/March">Round 1 – February/March</option>
+            <option value="Round 2 – April">Round 2 – April</option>
+            <option value="Round 3 – May">Round 3 – May</option>
+            <option value="Round 4 – July">Round 4 – July</option>
+            <option value="Round 5 – August">Round 5 – August</option>
+            <option value="Round 6 – September">Round 6 – September</option>
+            <option value="Round 7 – October">Round 7 – October</option>
+            <option value="Round 8 – November">Round 8 – November</option>
+            <option value="Round 9 – December">Round 9 – December</option>
+            <option value="Round 10 – Extra">Round 10 – Extra</option>
+          </select></div>
           <div class="ffield"><label>Kick-off Time</label><input class="inp" id="f-time" type="time" style="margin-bottom:0"></div>
         </div>
         <div class="frow">
@@ -451,8 +462,12 @@ footer .fsocial a:hover{color:var(--gold)}
           <div class="ffield"><label>Away Team</label><select class="inp" id="f-away" style="margin-bottom:0"></select></div>
         </div>
         <div class="frow">
+          <div class="ffield"><label>Match Date</label><input class="inp" id="f-date" type="date" style="margin-bottom:0"></div>
           <div class="ffield"><label>Venue</label><input class="inp" id="f-venue" type="text" placeholder="e.g. King's Park, Durban" style="margin-bottom:0"></div>
+        </div>
+        <div class="frow">
           <div class="ffield"><label>Status</label><select class="inp" id="f-status" style="margin-bottom:0"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="halftime">Half Time</option><option value="played">Full Time</option><option value="postponed">Postponed</option><option value="cancelled">Cancelled</option></select></div>
+          <div class="ffield"></div>
         </div>
         <div class="frow">
           <div class="ffield"><label>Home Score</label><input class="inp" id="f-hs" type="number" min="0" value="0" style="margin-bottom:0"></div>
@@ -679,18 +694,29 @@ function rStandings() {
 }
 
 // ===== FIXTURES =====
+const ROUND_ORDER = ['Round 1 – February/March','Round 2 – April','Round 3 – May','Round 4 – July','Round 5 – August','Round 6 – September','Round 7 – October','Round 8 – November','Round 9 – December','Round 10 – Extra'];
+
 function rFixtures() {
   const el = document.getElementById('pub-fix'); if(!el) return;
-  const sorted = [...C.fixtures].sort((a,b)=>new Date(b.match_date+' '+(b.match_time||'00:00'))-new Date(a.match_date+' '+(a.match_time||'00:00')));
-  if(!sorted.length){ el.innerHTML='<p style="color:var(--gray);font-size:13px;padding:12px 0">No fixtures added yet.</p>'; return; }
-  el.innerHTML = sorted.map(m=>{
-    const ht=TEAMS.find(t=>t.id==m.home_id), at=TEAMS.find(t=>t.id==m.away_id);
-    const score = m.status==='played' ? `${m.hs} – ${m.away_score}` : '';
-    const tb = m.match_time&&m.status==='upcoming' ? `<span class="btime">${m.match_time}</span>` : '';
-    const ub = m.status==='upcoming' ? `<span class="bup">Upcoming</span>` : '';
-    const click = m.status==='played' ? `onclick="showMatch(${m.id})" class="fix clickable"` : `class="fix"`;
-    return `<div ${click}><div class="fdate">${fmtDate(m.match_date)}</div><div class="fteams">${ht?ht.name:'?'}<span class="fvs">vs</span>${at?at.name:'?'} ${ub}${tb}</div><div class="fscore">${score}</div><div class="fvenue">${m.venue||''}</div></div>`;
-  }).join('');
+  if(!C.fixtures.length){ el.innerHTML='<p style="color:var(--gray);font-size:13px;padding:12px 0">No fixtures added yet.</p>'; return; }
+  const grouped = {};
+  ROUND_ORDER.forEach(r=>grouped[r]=[]);
+  C.fixtures.forEach(m=>{ const r=m.round||'Round 1 – February/March'; if(!grouped[r]) grouped[r]=[]; grouped[r].push(m); });
+  let html='';
+  ROUND_ORDER.forEach(round=>{
+    const matches = grouped[round]; if(!matches||!matches.length) return;
+    html += `<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);padding:8px 0 6px;border-bottom:2px solid var(--gold);margin-bottom:4px">${round}</div>`;
+    matches.sort((a,b)=>new Date(a.match_date+' '+(a.match_time||'00:00'))-new Date(b.match_date+' '+(b.match_time||'00:00')));
+    html += matches.map(m=>{
+      const ht=TEAMS.find(t=>t.id==m.home_id), at=TEAMS.find(t=>t.id==m.away_id);
+      const hasScore=['played','live','halftime'].includes(m.status);
+      const score = hasScore ? `${m.hs} – ${m.away_score}` : '';
+      const click = m.status==='played' ? `onclick="showMatch(${m.id})" class="fix clickable"` : `class="fix"`;
+      return `<div ${click}><div class="fdate">${m.match_date?fmtDate(m.match_date):'TBD'}</div><div class="fteams">${ht?ht.name:'?'}<span class="fvs">vs</span>${at?at.name:'?'} ${statusBadge(m)}</div><div class="fscore">${score}</div><div class="fvenue">${m.venue||''}</div></div>`;
+    }).join('');
+    html += '</div>';
+  });
+  el.innerHTML = html;
 }
 
 function rHomeResults() {
@@ -858,6 +884,7 @@ async function saveFixture() {
   if(home===away){ toast2('Home and away teams must be different!','#e74c3c'); return; }
   const data = {
     home_id:home, away_id:away,
+    round:document.getElementById('f-round').value,
     match_date:document.getElementById('f-date').value,
     match_time:document.getElementById('f-time').value,
     venue:document.getElementById('f-venue').value.trim(),
@@ -884,6 +911,7 @@ async function saveFixture() {
 function editFixture(id) {
   const m = C.fixtures.find(f=>f.id===id); if(!m) return;
   editFixId = id; fillSelects();
+  document.getElementById('f-round').value = m.round||'Round 1 – February/March';
   document.getElementById('f-date').value = m.match_date||'';
   document.getElementById('f-time').value = m.match_time||'';
   document.getElementById('f-home').value = m.home_id;
