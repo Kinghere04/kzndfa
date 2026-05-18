@@ -629,7 +629,7 @@ async function loadAll() {
   C.news = nw.data||[];
   C.gallery = gal.data||[];
   C.teamLogos = {};
-  (logos.data||[]).forEach(l=>C.teamLogos[l.team_id]=l.logo);
+  (logos.data||[]).forEach(l=>C.teamLogos[l.team_id]=l.logo_data);
   C.events = evts.data||[];
   C.stats = sts.data||[];
   C.lineups = lns.data||[];
@@ -1111,10 +1111,10 @@ function renderAdmTeams() {
 }
 async function uploadTeamLogo(tid, inp) {
   const file=inp.files[0]; if(!file) return;
-  const logo=await fileToB64(file);
+  const logo_data=await fileToB64(file);
   const existing=await sb.from('team_logos').select('team_id').eq('team_id',tid).single();
-  if(existing.data){ await sb.from('team_logos').update({logo}).eq('team_id',tid); }
-  else { await sb.from('team_logos').insert({team_id:tid,logo}); }
+  if(existing.data){ await sb.from('team_logos').update({logo_data}).eq('team_id',tid); }
+  else { await sb.from('team_logos').insert({team_id:tid,logo_data}); }
   await loadAll(); renderAdmTeams(); rTeams(); rStandings(); toast2('Team logo updated!');
 }
 async function rmTeamLogo(tid) {
